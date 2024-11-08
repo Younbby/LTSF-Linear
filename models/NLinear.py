@@ -26,6 +26,7 @@ class Model(nn.Module):
     def forward(self, x):
         # x: [Batch, Input length, Channel]
         seq_last = x[:,-1:,:].detach()
+        # 减去最后一个元素
         x = x - seq_last
         if self.individual:
             output = torch.zeros([x.size(0),self.pred_len,x.size(2)],dtype=x.dtype).to(x.device)
@@ -34,5 +35,6 @@ class Model(nn.Module):
             x = output
         else:
             x = self.Linear(x.permute(0,2,1)).permute(0,2,1)
+        # 通过线性层之后加上最后一个元素
         x = x + seq_last
         return x # [Batch, Output length, Channel]
