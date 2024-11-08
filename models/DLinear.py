@@ -62,6 +62,7 @@ class Model(nn.Module):
                 # self.Linear_Seasonal[i].weight = nn.Parameter((1/self.seq_len)*torch.ones([self.pred_len,self.seq_len]))
                 # self.Linear_Trend[i].weight = nn.Parameter((1/self.seq_len)*torch.ones([self.pred_len,self.seq_len]))
         else:
+            # 直接一个线性层 从336 -> 96
             self.Linear_Seasonal = nn.Linear(self.seq_len,self.pred_len)
             self.Linear_Trend = nn.Linear(self.seq_len,self.pred_len)
             
@@ -71,8 +72,13 @@ class Model(nn.Module):
 
     def forward(self, x):
         # x: [Batch, Input length, Channel]
+        # 通过移动平均法拆分出季节性和趋势 (32,336,7)
         seasonal_init, trend_init = self.decompsition(x)
+        # 更换维度 (32,336,7) -> (32,7,336)
         seasonal_init, trend_init = seasonal_init.permute(0,2,1), trend_init.permute(0,2,1)
+        # 默认输入是false，每个通道是否独立
+
+        # 通过线性层 (32,7,336) -> (32,7,96)
         if self.individual:
             seasonal_output = torch.zeros([seasonal_init.size(0),seasonal_init.size(1),self.pred_len],dtype=seasonal_init.dtype).to(seasonal_init.device)
             trend_output = torch.zeros([trend_init.size(0),trend_init.size(1),self.pred_len],dtype=trend_init.dtype).to(trend_init.device)
