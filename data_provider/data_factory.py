@@ -12,7 +12,9 @@ data_dict = {
 
 def data_provider(args, flag):
     Data = data_dict[args.data]
+    # embed默认值为'timeF'
     timeenc = 0 if args.embed != 'timeF' else 1
+    # train_only默认False
     train_only = args.train_only
 
     if flag == 'test':
@@ -29,7 +31,9 @@ def data_provider(args, flag):
     else:
         shuffle_flag = True
         drop_last = True
+        # batch_size默认32
         batch_size = args.batch_size
+        # freq默认为'h'-小时
         freq = args.freq
 
     data_set = Data(

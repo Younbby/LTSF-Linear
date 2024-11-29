@@ -9,6 +9,7 @@ fi
 seq_len=336
 model_name=DLinear
 
+# -u 表示以非缓冲模式运行，确保实时输出日志到控制台
 python -u run_longExp.py \
   --is_training 1 \
   --root_path ./dataset/ \

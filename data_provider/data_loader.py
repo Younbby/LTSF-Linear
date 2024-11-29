@@ -220,11 +220,13 @@ class Dataset_Custom(Dataset):
         self.__read_data__()
 
     def __read_data__(self):
+        # 初始化标准器，用于标准化数据
         self.scaler = StandardScaler()
         df_raw = pd.read_csv(os.path.join(self.root_path,
                                           self.data_path))
 
         '''
+        选择特征列，多变量预测时，除日期外均为特征列，单变量预测需除去两列
         df_raw.columns: ['date', ...(other features), target feature]
         '''
         cols = list(df_raw.columns)
@@ -232,6 +234,8 @@ class Dataset_Custom(Dataset):
             cols.remove(self.target)
         cols.remove('date')
         # print(cols)
+
+        # 根据当前是训练、验证还是测试，来选择数据集不同部分
         num_train = int(len(df_raw) * (0.7 if not self.train_only else 1))
         num_test = int(len(df_raw) * 0.2)
         num_vali = len(df_raw) - num_train - num_test
@@ -240,12 +244,15 @@ class Dataset_Custom(Dataset):
         border1 = border1s[self.set_type]
         border2 = border2s[self.set_type]
 
+        # 猜测：前面拆开，现在并上目的是确保'date'列在第0列，单变量时，target列在最后一列
         if self.features == 'M' or self.features == 'MS':
             df_raw = df_raw[['date'] + cols]
             cols_data = df_raw.columns[1:]
+            # 特征数据？输出数据？
             df_data = df_raw[cols_data]
         elif self.features == 'S':
             df_raw = df_raw[['date'] + cols + [self.target]]
+            # 注意：这里应该和if里面的df_data的不一样，仅选择了目标特征列？
             df_data = df_raw[[self.target]]
 
         if self.scale:
@@ -253,12 +260,16 @@ class Dataset_Custom(Dataset):
             self.scaler.fit(train_data.values)
             # print(self.scaler.mean_)
             # exit()
+
+            # 输出结果是一个 Numpy 数组，训练集标准化
             data = self.scaler.transform(df_data.values)
         else:
             data = df_data.values
 
         df_stamp = df_raw[['date']][border1:border2]
+        # 等价于df_stamp['date']
         df_stamp['date'] = pd.to_datetime(df_stamp.date)
+        # 参数embed，默认为'timeF'，即self.timeenc为1
         if self.timeenc == 0:
             df_stamp['month'] = df_stamp.date.apply(lambda row: row.month, 1)
             df_stamp['day'] = df_stamp.date.apply(lambda row: row.day, 1)
@@ -266,6 +277,7 @@ class Dataset_Custom(Dataset):
             df_stamp['hour'] = df_stamp.date.apply(lambda row: row.hour, 1)
             data_stamp = df_stamp.drop(['date'], 1).values
         elif self.timeenc == 1:
+            #
             data_stamp = time_features(pd.to_datetime(df_stamp['date'].values), freq=self.freq)
             data_stamp = data_stamp.transpose(1, 0)
 
